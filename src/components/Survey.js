@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import ReactFullpage from "@fullpage/react-fullpage";
 import { motion, AnimatePresence } from "framer-motion";
 
 const questions = [
@@ -105,72 +106,69 @@ const getResultSummary = (score) => {
     }
   };
 
-const Survey = () => {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [finalScore, setFinalScore] = useState(null);
-
-  const handleAnswer = (index) => {
-    const category = questions[currentQuestion].section;
-    const updatedAnswers = {
-      ...answers,
-      [category]: [...(answers[category] || []), (index + 1) * 20],
+  const Survey = () => {
+    const [answers, setAnswers] = useState([]);
+    const [selectedAnswer, setSelectedAnswer] = useState(null);
+  
+    const handleAnswerSelect = (option) => {
+      setSelectedAnswer(option);
     };
   
-    setAnswers(updatedAnswers);
+    const handleSubmit = (moveToNext) => {
+      if (selectedAnswer !== null) {
+        setAnswers([...answers, selectedAnswer]);
+        setSelectedAnswer(null);
+        setTimeout(() => {
+          moveToNext();
+        }, 300); // Delay animation to allow smooth transition
+      }
+    };
   
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      const score = calculateScore(updatedAnswers);
-      setFinalScore(score);
-    }
+    return (
+      <ReactFullpage
+        scrollingSpeed={700}
+        verticalCentered={false}
+        navigation
+        controlArrows={true}
+        slidesNavigation={true}
+        render={({ fullpageApi }) => (
+          <ReactFullpage.Wrapper>
+            <div className="section">
+              <div className="slide-wrapper">
+                {questions.map((question, index) => (
+                  <div className="slide" key={index}>
+                    <div className="w-3/4 p-6 bg-white shadow-lg rounded-lg text-center transition-transform transform translate-x-0 duration-500 ease-in-out">
+                      <h2 className="text-lg font-bold mb-4">{question.section}</h2>
+                      <p className="text-xl mb-4">{question.text}</p>
+                      <div className="space-y-3">
+                        {question.options.map((option, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleAnswerSelect(option)}
+                            className={`block w-full p-4 rounded-md transition ${selectedAnswer === option ? 'bg-gray-500 text-white' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => handleSubmit(fullpageApi.moveSlideRight)}
+                        className={`mt-4 p-4 rounded-md transition ${selectedAnswer === null ? 'bg-gray-400 text-gray-700 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-700'}`}
+                        disabled={selectedAnswer === null}
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </ReactFullpage.Wrapper>
+        )}
+      />
+    );
   };
   
   
-
-  return (
-    <div className="h-screen w-screen flex justify-center items-center bg-gray-100">
-      <AnimatePresence mode="wait">
-        {finalScore === null ? (
-          <motion.div
-            key={currentQuestion}
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -100 }}
-            transition={{ duration: 0.5 }}
-            className="w-3/4 p-6 bg-white shadow-lg rounded-lg"
-          >
-            <h2 className="text-lg font-bold mb-4">
-              {questions[currentQuestion].section}
-            </h2>
-            <p className="text-xl mb-4">{questions[currentQuestion].text}</p>
-            <div className="space-y-3">
-              {questions[currentQuestion].options.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleAnswer(index)}
-                  className="block w-full p-4 bg-blue-500 text-white rounded-md hover:bg-blue-700 transition"
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="w-3/4 p-6 bg-white shadow-lg rounded-lg"
-          >
-            <h2 className="text-lg font-bold mb-4">Final Score: {finalScore}</h2>
-            <p className="text-xl">{getResultSummary(finalScore)}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );  
-};
 
 export default Survey;
